@@ -1,0 +1,13 @@
+services:
+  notebook:
+    container_name: notebook
+    build:
+      context: .
+      dockerfile: ./docker/cpu/Dockerfile
+    volumes:
+      - ./notebooks:/notebooks
+    ports:
+      - 8888:8888
+    tty: true
+    working_dir: /notebooks
+    command: "jupyter notebook --ip=0.0.0.0 --port=8888 --allow-root --no-browser  --NotebookApp.token='' --NotebookApp.password=''"

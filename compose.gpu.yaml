@@ -1,0 +1,24 @@
+services:
+  notebook:
+    build:
+      context: .
+      dockerfile: ./docker/gpu/Dockerfile
+    tty: true
+    ipc: host
+    # memory制限
+    ulimits:
+      memlock: -1
+      stack: -1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+    volumes:
+      - ./notebooks:/notebooks
+    ports:
+      - 8888:8888
+    working_dir: /notebooks
+    command: "jupyter notebook --ip=0.0.0.0 --port=8888 --allow-root --no-browser  --NotebookApp.token='' --NotebookApp.password=''"
