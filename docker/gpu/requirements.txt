@@ -1,5 +1,4 @@
 scikit-learn
-notebook
 opencv-python
 pandas
 matplotlib

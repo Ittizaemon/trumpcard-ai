@@ -1,15 +1,28 @@
+ARG PYTHON_VERSION=3.10.13
+FROM python:${PYTHON_VERSION}-slim as builder
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /tmp/setup
+COPY ./docker/gpu/requirements.txt .
+RUN /usr/local/bin/python -m pip install --upgrade pip \
+    && pip install -r requirements.txt --no-cache-dir
+
+RUN rm -rf /tmp/setup
+
 FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
 
 ENV PYTHONUNBUFFERED=1
 ENV SHELL=/bin/bash
 ENV TZ=Asia/Tokyo
-ENV TF_ENABLE_ONEDNN_OPTS=0
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+# RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN apt-get update && apt-get install -y \
     # opencv関連
     libgl1-mesa-dev \
     libglib2.0-0 \
+    # numa関連(numa.h)
+    libnuma-dev \
     # python build関連
     make \
     wget \
@@ -21,7 +34,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Python install
-ARG PYTHON_VERSION=3.11.7
+ARG PYTHON_VERSION=3.10.13
 WORKDIR /tmp/setup
 RUN wget https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz \
     && tar xJf Python-${PYTHON_VERSION}.tar.xz
@@ -30,11 +43,15 @@ RUN ./configure && make && make install
 
 RUN ln -s /usr/local/bin/python3 /usr/local/bin/python 
 
+ARG PYTHON_VERSION=3.10
+COPY --from=builder \
+    /usr/local/lib/python${PYTHON_VERSION}/site-packages \
+    /usr/local/lib/python${PYTHON_VERSION}/site-packages/
+
 # Python Library install
 COPY ./docker/gpu/requirements.txt .
 RUN /usr/local/bin/python -m pip install --upgrade pip \
-    && pip install --no-cache-dir tensorflow[and-cuda] \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir tensorflow[and-cuda] notebook tensorrt numa
 
 RUN rm -rf /tmp/setup
 
