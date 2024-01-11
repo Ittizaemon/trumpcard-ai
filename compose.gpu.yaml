@@ -5,10 +5,6 @@ services:
       dockerfile: ./docker/gpu/Dockerfile
     tty: true
     ipc: host
-    # memory制限
-    ulimits:
-      memlock: -1
-      stack: -1
     deploy:
       resources:
         reservations:
